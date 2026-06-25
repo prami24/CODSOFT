@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Movie Recommender</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f1e8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #d97706;
+      --accent-2: #2563eb;
+      --border: #e5dccf;
+      --success: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, 'Times New Roman', serif;
+      background: radial-gradient(circle at top, #fff7ed 0%, var(--bg) 45%, #efe7da 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(31, 41, 55, 0.12);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.05;
+    }
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 1.05rem;
+    }
+    .form-group {
+      margin: 20px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #b45309;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .tag {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    #recommendations {
+      display: none;
+    }
+    #recommendations.show {
+      display: block;
+    }
+    .movie-card {
+      background: linear-gradient(135deg, #fff 0%, #faf7f2 100%);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+      scroll-margin-top: 100px;
+    }
+    .movie-card.featured {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, #fffbf0 0%, #fef3c7 100%);
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+    }
+    .movie-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.3rem;
+      color: var(--text);
+    }
+    .movie-genres {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .error {
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--accent-2);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    @media (max-width: 720px) {
+      .card { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Movie Recommender</h1>
+      <p>Enter your favorite genre(s) to get movie recommendations.</p>
+
+      <div class="form-group">
+        <label for="genreInput">What genre do you like?</label>
+        <input
+          type="text"
+          id="genreInput"
+          placeholder="e.g., action, sci-fi, drama"
+          autocomplete="off"
+        />
+        <div class="tags" id="availableTags"></div>
+        <button onclick="recommend()">Get Recommendations</button>
+      </div>
+
+      <div class="error" id="errorMsg"></div>
+      <div id="recommendations"></div>
+    </div>
+  </div>
+
+  <script>
+    // Movie database: title -> list of genres
+    const MOVIES = {
+      "Mad Max: Fury Road": ["action", "adventure", "thriller"],
+      "Die Hard": ["action", "thriller"],
+      "The Dark Knight": ["action", "crime", "drama"],
+      "Inception": ["action", "sci-fi", "thriller"],
+      "The Godfather": ["crime", "drama"],
+      "Pulp Fiction": ["crime", "drama"],
+      "The Shawshank Redemption": ["drama"],
+      "The Matrix": ["action", "sci-fi"],
+      "Interstellar": ["sci-fi", "drama", "adventure"],
+      "Toy Story": ["animation", "family", "comedy"],
+      "The Lion King": ["animation", "family", "drama"],
+      "Get Out": ["horror", "thriller"],
+      "A Quiet Place": ["horror", "drama"],
+      "La La Land": ["musical", "romance", "drama"],
+      "The Avengers": ["action", "adventure", "sci-fi"],
+    };
+
+    // Get sorted list of available genres
+    function getAvailableGenres() {
+      const genres = new Set();
+      for (const genreList of Object.values(MOVIES)) {
+        genreList.forEach(g => genres.add(g));
+      }
+      return Array.from(genres).sort();
+    }
+
+    // Parse comma-separated user input
+    function parseInput(raw) {
+      if (!raw) return [];
+      return raw.split(",").map(g => g.trim().toLowerCase()).filter(g => g.length > 0);
+    }
+
+    // Recommend movies by matching genres
+    function getRecommendations(userGenres, n = 3) {
+      const userSet = new Set(userGenres);
+      const scored = [];
+      for (const [title, genres] of Object.entries(MOVIES)) {
+        const score = genres.filter(g => userSet.has(g)).length;
+        scored.push({ title, genres, score });
+      }
+      scored.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+      return scored.slice(0, n);
+    }
+
+    // Main recommend function
+    function recommend() {
+      const input = document.getElementById("genreInput").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
+      const recsDiv = document.getElementById("recommendations");
+
+      errorMsg.classList.remove("show");
+      recsDiv.classList.remove("show");
+
+      if (!input) {
+        errorMsg.textContent = "Please enter at least one genre.";
+        errorMsg.classList.add("show");
+        return;
+      }
+
+      const userGenres = parseInput(input);
+      const allGenres = getAvailableGenres();
+      const validGenres = userGenres.filter(g => allGenres.includes(g));
+      const invalid = userGenres.filter(g => !allGenres.includes(g));
+
+      if (invalid.length > 0) {
+        errorMsg.textContent = `Unknown genres: ${invalid.join(", ")}. Try: ${allGenres.join(", ")}`;
+        errorMsg.classList.add("show");
+        return;
+      }
+
+      if (validGenres.length === 0) {
+        errorMsg.textContent = "No valid genres. Try: " + allGenres.join(", ");
+        errorMsg.classList.add("show");
+        return;
+      }
+
+      // Get recommendations
+      const recs = getRecommendations(validGenres);
+
+      // Build HTML
+      let html = `<h2>Recommendations for: <strong>${validGenres.join(", ")}</strong></h2>`;
+      recs.forEach((movie, i) => {
+        const isFeatured = i === 0;
+        const classes = `movie-card ${isFeatured ? "featured" : ""}`;
+        const badge = isFeatured ? '<span class="badge">Top Pick</span>' : "";
+        html += `
+          <div class="${classes}" id="movie-${i}">
+            ${badge}
+            <h3>${movie.title}</h3>
+            <p class="movie-genres">Genres: ${movie.genres.join(", ")}</p>
+          </div>
+        `;
+      });
+
+      recsDiv.innerHTML = html;
+      recsDiv.classList.add("show");
+
+      // Scroll to top recommendation
+      setTimeout(() => {
+        document.getElementById("movie-0").scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+
+    // Show available genres on page load
+    function init() {
+      const tagDiv = document.getElementById("availableTags");
+      const genres = getAvailableGenres();
+      tagDiv.innerHTML = genres.map(g => `<span class="tag">${g}</span>`).join("");
+
+      // Allow Enter key to submit
+      document.getElementById("genreInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") recommend();
+      });
+    }
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Localhost game</p>
+      <h1>Tic-Tac-Toe</h1>
+      <p class="subtitle">Play as <strong>X</strong> against an unbeatable AI playing <strong>O</strong>.</p>
+    </section>
+
+    <section class="panel">
+      <div class="status" id="status">Your turn: choose a cell.</div>
+      <div class="board" id="board" aria-label="Tic-Tac-Toe board"></div>
+      <button id="restart" class="restart" type="button">Restart Game</button>
+    </section>
+
+    <section class="rules">
+      <p>Click any empty square to play. You are <strong>X</strong>, AI is <strong>O</strong>.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
